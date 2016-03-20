@@ -17,8 +17,7 @@ impl Token {
             match token.chars().next().unwrap() {
                 '+' => Token::Plus,
                 '-' => Token::Minus,
-                'E' => Token::End,
-                _ => panic!(),
+                _ => Token::End,
             }
         }
     }
@@ -47,37 +46,35 @@ impl Interpreter {
     }
 
     fn get_next_token(&mut self) -> Token {
-        if self.text.is_empty() {
-            Token::End
-        } else {
-            let mut text = String::new();
-            while self.text.chars().next().unwrap().is_numeric() {
-                text.push(self.text.remove(0));    
-            }
-
-            if text.len() == 0 {
-                text.push(self.text.remove(0));
-            }
-            Token::new(&text)
+        let mut text = String::new();
+        while self.text.chars().next().unwrap().is_numeric() {
+            text.push(self.text.remove(0));    
         }
+        if text.len() == 0 {
+            text.push(self.text.remove(0));
+        }
+        Token::new(&text)
     }
   
     pub fn expr(&mut self, line: &str) -> u32 {
         self.text = String::from(line.replace(" ", ""));
-
-        match self.get_next_token() {
-            Token::Integer(value) => self.stack.push(value),
-            _ => panic!()
+        loop {
+            match self.get_next_token() {
+                Token::Integer(value) => {
+                    if self.ops.len() > 0 {
+                        let left = self.stack.pop().expect("should be one u32 on the stack");
+                        let op = self.ops.pop().expect("At least one Token on the stack");
+                        self.stack.push(calculate(left, value, op));
+                    } else {
+                        self.stack.push(value);
+                    }
+                },
+                Token::Plus => self.ops.push(Token::Plus),
+                Token::Minus => self.ops.push(Token::Minus),
+                Token::End => break,
+            }
         }
-        let op = self.get_next_token();
-        self.ops.push(op);
-        match self.get_next_token() {
-            Token::Integer(value) => calculate(
-                self.stack.pop().expect("Should be one u32 on the stack"), 
-                value, 
-                self.ops.pop().expect("Should be one Token on the stack.")),
-            _ => panic!()
-        }
+        self.stack.pop().expect("Should be one u32 on the stack")
     }
 }
 
