@@ -23,7 +23,6 @@ impl Token {
         }
     }
 }
-
 pub struct Interpreter {
     text: String,
     stack: Vec<u32>,
